@@ -1,0 +1,34 @@
+server:
+  port: 8081   # 8080 is taken by the Kafka UI
+
+spring:
+  application:
+    name: kafka-demo
+
+  kafka:
+    # Running from VS Code: Kafka is reached through the port Docker opened.
+    # Running in Docker: docker-compose.yml overrides this with kafka:29092.
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      acks: all                  # wait until Kafka has safely stored the message
+      properties:
+        enable.idempotence: true # no duplicates if the producer retries a send
+        linger.ms: 5             # batch messages for up to 5 ms for better throughput
+
+    consumer:
+      auto-offset-reset: earliest  # a brand-new group starts from the oldest message
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # ErrorHandlingDeserializer wraps the JSON deserializer, so a malformed
+      # message is reported as an error instead of crashing the consumer in a loop.
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        spring.json.trusted.packages: com.example.kafkademo
+        spring.json.value.default.type: com.example.kafkademo.Order  # for messages typed in the terminal
+
+logging:
+  level:
+    com.example.kafkademo: INFO
