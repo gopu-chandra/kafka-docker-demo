@@ -58,19 +58,31 @@ services:
         condition: service_healthy
 
   # Your Spring Boot application
+  # app:
+  #   build: .                       # build the image using the Dockerfile in this folder
+  #   container_name: spring-app
+  #   ports:
+  #     - "8081:8081"                # localhost:8081 on your machine -> app port 8081
+  #   environment:
+  #     # Overrides spring.kafka.bootstrap-servers from application.yml.
+  #     # Inside Docker, the app reaches Kafka by its service name, not localhost.
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy # wait until Kafka is ready
+  #   restart: unless-stopped
+
+#download the image from the GitHub Container Registry instead of building it locally. This is useful for CI/CD pipelines where you want to use a pre-built image.
   app:
-    build: .                       # build the image using the Dockerfile in this folder
+    image: ghcr.io/gopu-chandra/kafka-docker-demo:latest   # was: build: .
     container_name: spring-app
     ports:
-      - "8081:8081"                # localhost:8081 on your machine -> app port 8081
+      - "8081:8081"
     environment:
-      # Overrides spring.kafka.bootstrap-servers from application.yml.
-      # Inside Docker, the app reaches Kafka by its service name, not localhost.
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       kafka:
-        condition: service_healthy # wait until Kafka is ready
+        condition: service_healthy
     restart: unless-stopped
-
 volumes:
   kafka-data:

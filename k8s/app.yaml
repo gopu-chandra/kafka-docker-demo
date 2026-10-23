@@ -1,0 +1,75 @@
+# The Spring Boot app: 3 copies behind one Service.
+# Reachable from your Mac at http://localhost:8081
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-demo-app
+  labels:
+    app: kafka-demo-app
+spec:
+  replicas: 3                  # three consumers in the same group: Kafka splits the partitions
+  selector:
+    matchLabels:
+      app: kafka-demo-app
+  strategy:
+    type: RollingUpdate        # replace pods one at a time, so the app never fully goes down
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: kafka-demo-app
+    spec:
+      enableServiceLinks: false
+      # If your GHCR package is private, create the "ghcr-pull" secret (see README) and uncomment:
+      # imagePullSecrets:
+      #   - name: ghcr-pull
+      initContainers:
+        # Runs before the app starts and waits until Kafka accepts connections.
+        # Kubernetes has no "depends_on", so this is the usual way to order startup.
+        - name: wait-for-kafka
+          image: busybox:1.37
+          command: ["sh", "-c", "until nc -z kafka 9092; do echo waiting for kafka; sleep 3; done"]
+      containers:
+        - name: app
+          # No tag here: kustomization.yaml sets it, and the pipeline updates it on every release.
+          image: ghcr.io/gopu-chandra/kafka-docker-demo
+          ports:
+            - containerPort: 8081
+              name: http
+          env:
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          readinessProbe:      # only send traffic once the app is listening
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:       # restart the pod if it stops responding
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-demo-app
+  labels:
+    app: kafka-demo-app
+spec:
+  type: LoadBalancer           # on Docker Desktop this appears on localhost
+  selector:
+    app: kafka-demo-app
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081

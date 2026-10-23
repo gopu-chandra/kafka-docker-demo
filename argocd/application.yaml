@@ -1,0 +1,27 @@
+# Tells Argo CD what to watch and where to deploy it.
+# Apply once by hand:  kubectl apply -f argocd/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-demo
+  namespace: argocd
+spec:
+  project: default
+
+  # WHAT to deploy: the k8s folder of this repo, main branch
+  source:
+    repoURL: https://github.com/gopu-chandra/kafka-docker-demo.git
+    targetRevision: main
+    path: k8s
+
+  # WHERE to deploy it: this same cluster, namespace kafka-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kafka-demo
+
+  syncPolicy:
+    automated:
+      prune: true        # delete things that were removed from Git
+      selfHeal: true     # undo manual changes made with kubectl
+    syncOptions:
+      - CreateNamespace=true

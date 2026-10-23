@@ -1,0 +1,14 @@
+# Kustomize ties the manifests together. Argo CD reads this file.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kafka-demo
+
+resources:
+  - kafka.yaml
+  - app.yaml
+
+# The pipeline's deploy job rewrites newTag on every successful build of main.
+images:
+  - name: ghcr.io/gopu-chandra/kafka-docker-demo
+    newTag: latest
