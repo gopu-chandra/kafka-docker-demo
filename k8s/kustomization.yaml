@@ -11,4 +11,4 @@ resources:
 # The pipeline's deploy job rewrites newTag on every successful build of main.
 images:
   - name: ghcr.io/gopu-chandra/kafka-docker-demo
-    newTag: sha-312d97f
+    newTag: sha-8b003c6
