@@ -9,8 +9,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Configuration
+@RestController
+@RequestMapping ("/kafka-demo")
 public class KafkaConfig {
 
     /**
@@ -42,5 +47,10 @@ public class KafkaConfig {
                 (record, exception) -> new TopicPartition(KafkaTopics.ORDERS_DLT, record.partition()));
 
         return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2L));
+    }
+
+    @GetMapping("/welcome")
+    public String getWelcomeMessage() {
+        return "Welcome to the Order Service!";
     }
 }
